@@ -33,6 +33,15 @@ jobs:
         with:
           gradle-version: 8.4
 
+      - name: Inject Version into Gradle
+        run: |
+          VERSION_TAG="${{ github.event.inputs.versionTag || github.ref_name }}"
+          VERSION_NAME="${VERSION_TAG#v}"
+          # Simple timestamp for versionCode
+          VERSION_CODE=$(date +%s)
+          sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" app/build.gradle
+          sed -i "s/versionCode .*/versionCode $VERSION_CODE/" app/build.gradle
+
       - name: Build with Gradle
         run: gradle assembleDebug
 
