@@ -5,8 +5,6 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.app.DownloadManager;
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -35,11 +33,13 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -49,19 +49,17 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.cardview.widget.CardView;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -79,25 +77,27 @@ public class MainActivity extends AppCompatActivity {
     private TextView findCount, tabCountText;
     private FrameLayout tabCountButton;
     private ImageView menuButton;
+    private SwipeRefreshLayout swipeRefresh;
+    private ListView urlSuggestions;
 
     // State
     private boolean isIncognito = false;
     private boolean isDesktopMode = false;
-    private boolean isReaderMode = false;
+    private boolean isDarkMode = false;
     private boolean adBlockerEnabled = true;
     private int tabCount = 1;
+    private String currentSearchEngine = "google"; // google, bing, ddg
     private List<TabInfo> tabs = new ArrayList<>();
-    private int currentTabIndex = 0;
 
     // Data
     private SharedPreferences prefs;
     private List<HistoryItem> historyItems = new ArrayList<>();
     private List<BookmarkItem> bookmarks = new ArrayList<>();
+    private List<String> readingList = new ArrayList<>();
 
     // File chooser
     private ValueCallback<Uri[]> filePathCallback;
     private static final int FILE_CHOOSER_REQUEST = 100;
-    private static final int PERMISSION_REQUEST = 200;
 
     // Quick links
     private final String[][] QUICK_LINKS = {
@@ -111,22 +111,31 @@ public class MainActivity extends AppCompatActivity {
         {"Maps", "https://maps.google.com", "#34A853"}
     };
 
-    // Ad block list (simple domain-based)
+    // Ad block list
     private final String[] AD_DOMAINS = {
         "doubleclick.net", "googlesyndication.com", "googletagservices.com",
         "adservice.google.com", "ads.yahoo.com", "advertising.com",
         "scorecardresearch.com", "quantserve.com", "adnxs.com",
-        "outbrain.com", "taboola.com", "criteo.com", "adsystem.com"
+        "outbrain.com", "taboola.com", "criteo.com", "adsystem.com",
+        "tracking.com", "analytics.google.com", "facebook.com/tr"
     };
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
         prefs = getSharedPreferences("NovaBrowser", Context.MODE_PRIVATE);
         adBlockerEnabled = prefs.getBoolean("ad_blocker", true);
+        isDarkMode = prefs.getBoolean("dark_mode", false);
+        currentSearchEngine = prefs.getString("search_engine", "google");
+
+        // Apply dark mode
+        if (isDarkMode) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        }
+
+        setContentView(R.layout.activity_main);
 
         initViews();
         setupWebView();
@@ -135,8 +144,8 @@ public class MainActivity extends AppCompatActivity {
         setupHomeScreen();
         loadBookmarks();
         loadHistory();
+        loadReadingList();
 
-        // Handle incoming URL from SplashActivity
         String url = getIntent().getStringExtra("url");
         if (url != null) {
             loadUrl(url);
@@ -165,6 +174,8 @@ public class MainActivity extends AppCompatActivity {
         tabCountText = findViewById(R.id.tabCountText);
         tabCountButton = findViewById(R.id.tabCountButton);
         menuButton = findViewById(R.id.menuButton);
+        swipeRefresh = findViewById(R.id.swipeRefresh);
+        urlSuggestions = findViewById(R.id.urlSuggestions);
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -181,18 +192,24 @@ public class MainActivity extends AppCompatActivity {
         settings.setGeolocationEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setAllowFileAccess(true);
-        settings.setAllowContentAccess(true);
-        settings.setLoadsImagesAutomatically(true);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
 
-        // Cookie support
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
 
         webView.setWebViewClient(new NovaWebViewClient());
         webView.setWebChromeClient(new NovaWebChromeClient());
-        webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
-            downloadFile(url, contentDisposition, mimeType);
+        webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) ->
+            downloadFile(url, contentDisposition, mimeType));
+
+        // SwipeRefresh setup
+        swipeRefresh.setColorSchemeResources(R.color.primary, R.color.secondary, R.color.accent);
+        swipeRefresh.setOnRefreshListener(() -> {
+            if (webView.getUrl() != null && !webView.getUrl().equals("about:blank")) {
+                webView.reload();
+            } else {
+                swipeRefresh.setRefreshing(false);
+            }
         });
     }
 
@@ -202,6 +219,7 @@ public class MainActivity extends AppCompatActivity {
                 (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
                 loadUrl(urlEditText.getText().toString().trim());
                 hideKeyboard();
+                urlSuggestions.setVisibility(View.GONE);
                 return true;
             }
             return false;
@@ -211,19 +229,35 @@ public class MainActivity extends AppCompatActivity {
             if (hasFocus) {
                 urlEditText.selectAll();
                 animateUrlBarExpand();
+                showSuggestions(urlEditText.getText().toString());
             } else {
                 animateUrlBarCollapse();
+                urlSuggestions.setVisibility(View.GONE);
             }
+        });
+
+        // Autocomplete from history
+        urlEditText.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                showSuggestions(s.toString());
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        });
+
+        urlSuggestions.setOnItemClickListener((parent, view, position, id) -> {
+            String selected = (String) parent.getItemAtPosition(position);
+            loadUrl(selected);
+            urlSuggestions.setVisibility(View.GONE);
         });
 
         tabCountButton.setOnClickListener(v -> showTabsDialog());
         menuButton.setOnClickListener(v -> showMenu());
 
-        // Find in page buttons
+        // Find in page
         ImageView findPrev = findViewById(R.id.findPrev);
         ImageView findNext = findViewById(R.id.findNext);
         ImageView findClose = findViewById(R.id.findClose);
-
         findPrev.setOnClickListener(v -> webView.findNext(false));
         findNext.setOnClickListener(v -> webView.findNext(true));
         findClose.setOnClickListener(v -> closeFindInPage());
@@ -235,6 +269,30 @@ public class MainActivity extends AppCompatActivity {
             }
             @Override public void afterTextChanged(Editable s) {}
         });
+    }
+
+    private void showSuggestions(String query) {
+        if (query == null || query.length() < 2 || historyItems.isEmpty()) {
+            urlSuggestions.setVisibility(View.GONE);
+            return;
+        }
+        List<String> matches = new ArrayList<>();
+        String q = query.toLowerCase();
+        for (HistoryItem h : historyItems) {
+            if ((h.url.toLowerCase().contains(q) || h.title.toLowerCase().contains(q))
+                    && !matches.contains(h.url)) {
+                matches.add(h.url);
+                if (matches.size() >= 5) break;
+            }
+        }
+        if (matches.isEmpty()) {
+            urlSuggestions.setVisibility(View.GONE);
+            return;
+        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+            android.R.layout.simple_list_item_1, matches);
+        urlSuggestions.setAdapter(adapter);
+        urlSuggestions.setVisibility(View.VISIBLE);
     }
 
     private void setupBottomNav() {
@@ -254,7 +312,51 @@ public class MainActivity extends AppCompatActivity {
                 showKeyboard();
             });
         }
+
+        // Search engine chips
+        TextView chipGoogle = homeScreen.findViewById(R.id.chipGoogle);
+        TextView chipBing = homeScreen.findViewById(R.id.chipBing);
+        TextView chipDDG = homeScreen.findViewById(R.id.chipDDG);
+        updateSearchEngineChips(chipGoogle, chipBing, chipDDG);
+
+        if (chipGoogle != null) chipGoogle.setOnClickListener(v -> {
+            currentSearchEngine = "google";
+            prefs.edit().putString("search_engine", "google").apply();
+            updateSearchEngineChips(chipGoogle, chipBing, chipDDG);
+            Toast.makeText(this, "🔍 Google Search", Toast.LENGTH_SHORT).show();
+        });
+        if (chipBing != null) chipBing.setOnClickListener(v -> {
+            currentSearchEngine = "bing";
+            prefs.edit().putString("search_engine", "bing").apply();
+            updateSearchEngineChips(chipGoogle, chipBing, chipDDG);
+            Toast.makeText(this, "🔍 Bing Search", Toast.LENGTH_SHORT).show();
+        });
+        if (chipDDG != null) chipDDG.setOnClickListener(v -> {
+            currentSearchEngine = "ddg";
+            prefs.edit().putString("search_engine", "ddg").apply();
+            updateSearchEngineChips(chipGoogle, chipBing, chipDDG);
+            Toast.makeText(this, "🔍 DuckDuckGo Search", Toast.LENGTH_SHORT).show();
+        });
+
+        // Dark Mode & Incognito cards
+        CardView cardDarkMode = homeScreen.findViewById(R.id.cardDarkMode);
+        CardView cardIncognito = homeScreen.findViewById(R.id.cardIncognito);
+        if (cardDarkMode != null) cardDarkMode.setOnClickListener(v -> toggleDarkMode());
+        if (cardIncognito != null) cardIncognito.setOnClickListener(v -> toggleIncognito());
+
         setupQuickLinks();
+    }
+
+    private void updateSearchEngineChips(TextView google, TextView bing, TextView ddg) {
+        int selectedBg = R.drawable.chip_selected;
+        int normalBg = R.drawable.chip_background;
+        if (google == null || bing == null || ddg == null) return;
+        google.setBackground(ContextCompat.getDrawable(this, "google".equals(currentSearchEngine) ? selectedBg : normalBg));
+        google.setTextColor("google".equals(currentSearchEngine) ? 0xFFFFFFFF : ContextCompat.getColor(this, R.color.text_secondary));
+        bing.setBackground(ContextCompat.getDrawable(this, "bing".equals(currentSearchEngine) ? selectedBg : normalBg));
+        bing.setTextColor("bing".equals(currentSearchEngine) ? 0xFFFFFFFF : ContextCompat.getColor(this, R.color.text_secondary));
+        ddg.setBackground(ContextCompat.getDrawable(this, "ddg".equals(currentSearchEngine) ? selectedBg : normalBg));
+        ddg.setTextColor("ddg".equals(currentSearchEngine) ? 0xFFFFFFFF : ContextCompat.getColor(this, R.color.text_secondary));
     }
 
     private void setupQuickLinks() {
@@ -282,13 +384,10 @@ public class MainActivity extends AppCompatActivity {
             LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(sizeDp, sizeDp);
             card.setLayoutParams(cardParams);
             card.setRadius(16 * getResources().getDisplayMetrics().density);
-            card.setCardElevation(3 * getResources().getDisplayMetrics().density);
+            card.setCardElevation(4 * getResources().getDisplayMetrics().density);
 
-            try {
-                card.setCardBackgroundColor(android.graphics.Color.parseColor(color));
-            } catch (Exception e) {
-                card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.primary));
-            }
+            try { card.setCardBackgroundColor(android.graphics.Color.parseColor(color)); }
+            catch (Exception e) { card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.primary)); }
 
             TextView icon = new TextView(this);
             icon.setText(name.substring(0, 1));
@@ -296,9 +395,7 @@ public class MainActivity extends AppCompatActivity {
             icon.setTextSize(22);
             icon.setGravity(Gravity.CENTER);
             icon.setTypeface(null, android.graphics.Typeface.BOLD);
-            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            icon.setLayoutParams(iconParams);
+            icon.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             card.addView(icon);
 
             TextView label = new TextView(this);
@@ -306,8 +403,7 @@ public class MainActivity extends AppCompatActivity {
             label.setTextSize(12);
             label.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
             label.setGravity(Gravity.CENTER);
-            LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             labelParams.topMargin = (int) (4 * getResources().getDisplayMetrics().density);
             label.setLayoutParams(labelParams);
 
@@ -319,25 +415,26 @@ public class MainActivity extends AppCompatActivity {
                 animateItemClick(item);
                 loadUrl(finalUrl);
             });
-
             item.setBackground(ContextCompat.getDrawable(this, R.drawable.menu_item_background));
-
             grid.addView(item);
+        }
+    }
+
+    private String buildSearchUrl(String query) {
+        String encoded = Uri.encode(query);
+        switch (currentSearchEngine) {
+            case "bing": return "https://www.bing.com/search?q=" + encoded;
+            case "ddg":  return "https://duckduckgo.com/?q=" + encoded;
+            default:     return "https://www.google.com/search?q=" + encoded;
         }
     }
 
     private void loadUrl(String input) {
         if (input == null || input.isEmpty()) return;
-
         String url;
-        if (URLUtil.isValidUrl(input)) {
-            url = input;
-        } else if (input.contains(".") && !input.contains(" ")) {
-            url = "https://" + input;
-        } else {
-            // Search
-            url = "https://www.google.com/search?q=" + Uri.encode(input);
-        }
+        if (URLUtil.isValidUrl(input)) url = input;
+        else if (input.contains(".") && !input.contains(" ")) url = "https://" + input;
+        else url = buildSearchUrl(input);
 
         homeScreen.setVisibility(View.GONE);
         webView.setVisibility(View.VISIBLE);
@@ -345,8 +442,7 @@ public class MainActivity extends AppCompatActivity {
         urlEditText.setText(url);
         urlEditText.clearFocus();
         hideKeyboard();
-
-        // Save to history
+        urlSuggestions.setVisibility(View.GONE);
         addToHistory(url);
     }
 
@@ -364,9 +460,7 @@ public class MainActivity extends AppCompatActivity {
             ViewGroup.LayoutParams.WRAP_CONTENT, true);
         popup.setElevation(16);
         popup.setOutsideTouchable(true);
-
         setupMenuItems(menuView, popup);
-
         popup.showAtLocation(bottomNav, Gravity.BOTTOM | Gravity.END, 24, 56);
     }
 
@@ -383,28 +477,49 @@ public class MainActivity extends AppCompatActivity {
         TextView menuReader = menuView.findViewById(R.id.menuReader);
         TextView menuScreenshot = menuView.findViewById(R.id.menuScreenshot);
         TextView menuRefresh = menuView.findViewById(R.id.menuRefresh);
+        TextView menuReadingList = menuView.findViewById(R.id.menuReadingList);
+        TextView menuDarkMode = menuView.findViewById(R.id.menuDarkMode);
+        TextView menuPrint = menuView.findViewById(R.id.menuPrint);
 
         if (menuBookmarks != null) menuBookmarks.setOnClickListener(v -> { popup.dismiss(); showBookmarksDialog(); });
         if (menuHistory != null) menuHistory.setOnClickListener(v -> { popup.dismiss(); showHistoryDialog(); });
         if (menuIncognito != null) {
-            menuIncognito.setText(isIncognito ? "Exit Incognito" : "Incognito Mode");
+            menuIncognito.setText(isIncognito ? "Exit Incognito" : "🕵️  Incognito Mode");
             menuIncognito.setOnClickListener(v -> { popup.dismiss(); toggleIncognito(); });
         }
         if (menuDesktop != null) {
-            menuDesktop.setText(isDesktopMode ? "Mobile Mode" : "Desktop Mode");
+            menuDesktop.setText(isDesktopMode ? "📱  Mobile Mode" : "💻  Desktop Mode");
             menuDesktop.setOnClickListener(v -> { popup.dismiss(); toggleDesktopMode(); });
+        }
+        if (menuDarkMode != null) {
+            menuDarkMode.setText(isDarkMode ? "☀️  Light Mode" : "🌙  Dark Mode");
+            menuDarkMode.setOnClickListener(v -> { popup.dismiss(); toggleDarkMode(); });
         }
         if (menuFindInPage != null) menuFindInPage.setOnClickListener(v -> { popup.dismiss(); openFindInPage(); });
         if (menuShare != null) menuShare.setOnClickListener(v -> { popup.dismiss(); shareCurrentPage(); });
         if (menuAddBookmark != null) menuAddBookmark.setOnClickListener(v -> { popup.dismiss(); addBookmark(); });
+        if (menuReadingList != null) menuReadingList.setOnClickListener(v -> { popup.dismiss(); addToReadingList(); });
         if (menuSettings != null) menuSettings.setOnClickListener(v -> { popup.dismiss(); openSettings(); });
         if (menuAdBlock != null) {
-            menuAdBlock.setText(adBlockerEnabled ? "Ad Blocker: ON" : "Ad Blocker: OFF");
+            menuAdBlock.setText(adBlockerEnabled ? "🛡️  Ad Blocker: ON" : "Ad Blocker: OFF");
             menuAdBlock.setOnClickListener(v -> { popup.dismiss(); toggleAdBlocker(); });
         }
         if (menuReader != null) menuReader.setOnClickListener(v -> { popup.dismiss(); toggleReaderMode(); });
         if (menuScreenshot != null) menuScreenshot.setOnClickListener(v -> { popup.dismiss(); takeScreenshot(); });
         if (menuRefresh != null) menuRefresh.setOnClickListener(v -> { popup.dismiss(); webView.reload(); });
+        if (menuPrint != null) menuPrint.setOnClickListener(v -> { popup.dismiss(); printPage(); });
+    }
+
+    private void toggleDarkMode() {
+        isDarkMode = !isDarkMode;
+        prefs.edit().putBoolean("dark_mode", isDarkMode).apply();
+        if (isDarkMode) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+            Toast.makeText(this, "🌙 Dark Mode ON", Toast.LENGTH_SHORT).show();
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            Toast.makeText(this, "☀️ Light Mode", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void toggleIncognito() {
@@ -412,14 +527,10 @@ public class MainActivity extends AppCompatActivity {
         if (isIncognito) {
             webView.getSettings().setDomStorageEnabled(false);
             CookieManager.getInstance().setAcceptCookie(false);
-            getWindow().getDecorView().setBackgroundColor(
-                ContextCompat.getColor(this, R.color.incognito_background));
             Toast.makeText(this, "🕵️ Incognito Mode ON", Toast.LENGTH_SHORT).show();
         } else {
             webView.getSettings().setDomStorageEnabled(true);
             CookieManager.getInstance().setAcceptCookie(true);
-            getWindow().getDecorView().setBackgroundColor(
-                ContextCompat.getColor(this, R.color.background));
             Toast.makeText(this, "Incognito Mode OFF", Toast.LENGTH_SHORT).show();
         }
         webView.clearCache(true);
@@ -432,8 +543,7 @@ public class MainActivity extends AppCompatActivity {
         isDesktopMode = !isDesktopMode;
         WebSettings settings = webView.getSettings();
         if (isDesktopMode) {
-            settings.setUserAgentString(
-                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            settings.setUserAgentString("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
             Toast.makeText(this, "💻 Desktop Mode ON", Toast.LENGTH_SHORT).show();
         } else {
             settings.setUserAgentString(null);
@@ -445,8 +555,7 @@ public class MainActivity extends AppCompatActivity {
     private void toggleAdBlocker() {
         adBlockerEnabled = !adBlockerEnabled;
         prefs.edit().putBoolean("ad_blocker", adBlockerEnabled).apply();
-        String msg = adBlockerEnabled ? "🛡️ Ad Blocker ON" : "Ad Blocker OFF";
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, adBlockerEnabled ? "🛡️ Ad Blocker ON" : "Ad Blocker OFF", Toast.LENGTH_SHORT).show();
         webView.reload();
     }
 
@@ -455,12 +564,40 @@ public class MainActivity extends AppCompatActivity {
             "var body = document.body;" +
             "var article = document.querySelector('article') || document.querySelector('main') || body;" +
             "var content = article.innerText;" +
-            "document.body.innerHTML = '<div style=\"max-width:680px;margin:40px auto;padding:20px;font-family:Georgia,serif;font-size:18px;line-height:1.8;color:#222;background:#FAFAFA\">' +" +
-            "'<h1 style=\"font-size:28px;margin-bottom:20px\">' + document.title + '</h1>' +" +
+            "var bg = '" + (isDarkMode ? "#1a1a2e" : "#FAFAFA") + "';" +
+            "var fg = '" + (isDarkMode ? "#E0E0E0" : "#222222") + "';" +
+            "document.body.innerHTML = '<div style=\"max-width:680px;margin:40px auto;padding:24px;font-family:Georgia,serif;font-size:18px;line-height:1.8;color:'+fg+';background:'+bg+'\">' +" +
+            "'<h1 style=\"font-size:28px;margin-bottom:20px;color:'+fg+'\">' + document.title + '</h1>' +" +
             "'<p>' + content.replace(/\\n\\n/g,'</p><p>') + '</p></div>';" +
+            "document.body.style.background=bg;" +
             "})()";
         webView.loadUrl(readerJs);
         Toast.makeText(this, "📖 Reader Mode", Toast.LENGTH_SHORT).show();
+    }
+
+    private void printPage() {
+        android.print.PrintManager printManager = (android.print.PrintManager) getSystemService(Context.PRINT_SERVICE);
+        if (printManager != null) {
+            String jobName = webView.getTitle() != null ? webView.getTitle() : "Nova Browser Print";
+            android.print.PrintDocumentAdapter printAdapter = webView.createPrintDocumentAdapter(jobName);
+            android.print.PrintAttributes attributes = new android.print.PrintAttributes.Builder()
+                .setMediaSize(android.print.PrintAttributes.MediaSize.ISO_A4)
+                .build();
+            printManager.print(jobName, printAdapter, attributes);
+            Toast.makeText(this, "🖨️ Print dialog opened", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void addToReadingList() {
+        String url = webView.getUrl();
+        if (url == null) { Toast.makeText(this, "No page loaded", Toast.LENGTH_SHORT).show(); return; }
+        if (!readingList.contains(url)) {
+            readingList.add(0, url);
+            saveReadingList();
+            Toast.makeText(this, "📚 Added to Reading List", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Already in Reading List", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void openFindInPage() {
@@ -489,10 +626,7 @@ public class MainActivity extends AppCompatActivity {
         String url = webView.getUrl();
         String title = webView.getTitle();
         if (url == null) { Toast.makeText(this, "No page loaded", Toast.LENGTH_SHORT).show(); return; }
-
-        BookmarkItem bookmark = new BookmarkItem(title != null ? title : url, url,
-            System.currentTimeMillis());
-        bookmarks.add(0, bookmark);
+        bookmarks.add(0, new BookmarkItem(title != null ? title : url, url, System.currentTimeMillis()));
         saveBookmarks();
         Toast.makeText(this, "⭐ Bookmarked!", Toast.LENGTH_SHORT).show();
     }
@@ -502,63 +636,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showBookmarksDialog() {
-        if (bookmarks.isEmpty()) {
-            Toast.makeText(this, getString(R.string.no_bookmarks), Toast.LENGTH_SHORT).show();
-            return;
-        }
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("⭐ Bookmarks");
+        if (bookmarks.isEmpty()) { Toast.makeText(this, getString(R.string.no_bookmarks), Toast.LENGTH_SHORT).show(); return; }
         String[] items = new String[bookmarks.size()];
-        for (int i = 0; i < bookmarks.size(); i++) {
-            items[i] = bookmarks.get(i).title;
-        }
-        builder.setItems(items, (dialog, which) -> loadUrl(bookmarks.get(which).url));
-        builder.setNegativeButton("Close", null);
-        builder.show();
+        for (int i = 0; i < bookmarks.size(); i++) items[i] = bookmarks.get(i).title;
+        new AlertDialog.Builder(this).setTitle("⭐ Bookmarks")
+            .setItems(items, (d, w) -> loadUrl(bookmarks.get(w).url))
+            .setNegativeButton("Close", null).show();
     }
 
     private void showHistoryDialog() {
-        if (historyItems.isEmpty()) {
-            Toast.makeText(this, getString(R.string.no_history), Toast.LENGTH_SHORT).show();
-            return;
-        }
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("🕐 History");
-        int displayCount = Math.min(historyItems.size(), 30);
-        String[] items = new String[displayCount];
-        for (int i = 0; i < displayCount; i++) {
-            items[i] = historyItems.get(i).title;
-        }
-        builder.setItems(items, (dialog, which) -> loadUrl(historyItems.get(which).url));
-        builder.setNeutralButton("Clear", (dialog, which) -> {
-            historyItems.clear();
-            saveHistory();
-            Toast.makeText(this, "History cleared", Toast.LENGTH_SHORT).show();
-        });
-        builder.setNegativeButton("Close", null);
-        builder.show();
+        if (historyItems.isEmpty()) { Toast.makeText(this, getString(R.string.no_history), Toast.LENGTH_SHORT).show(); return; }
+        int cnt = Math.min(historyItems.size(), 30);
+        String[] items = new String[cnt];
+        for (int i = 0; i < cnt; i++) items[i] = historyItems.get(i).title;
+        new AlertDialog.Builder(this).setTitle("🕐 History")
+            .setItems(items, (d, w) -> loadUrl(historyItems.get(w).url))
+            .setNeutralButton("Clear", (d, w) -> { historyItems.clear(); saveHistory(); Toast.makeText(this, "History cleared", Toast.LENGTH_SHORT).show(); })
+            .setNegativeButton("Close", null).show();
     }
 
     private void showTabsDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Tabs (" + tabCount + ")");
         String[] options = {"+ New Tab", "+ New Incognito Tab"};
-        builder.setItems(options, (dialog, which) -> {
-            if (which == 0) openNewTab(false);
-            else openNewTab(true);
-        });
-        builder.setNegativeButton("Close", null);
-        builder.show();
+        new AlertDialog.Builder(this).setTitle("Tabs (" + tabCount + ")")
+            .setItems(options, (d, w) -> openNewTab(w == 1))
+            .setNegativeButton("Close", null).show();
     }
 
     private void openNewTab(boolean incognito) {
         tabCount++;
         tabCountText.setText(String.valueOf(tabCount));
-        if (incognito) {
-            isIncognito = true;
-            webView.clearCache(true);
-            CookieManager.getInstance().setAcceptCookie(false);
-        }
+        if (incognito) { isIncognito = true; CookieManager.getInstance().setAcceptCookie(false); }
         webView.loadUrl("about:blank");
         showHomeScreen();
         animateTabCount();
@@ -572,13 +679,8 @@ public class MainActivity extends AppCompatActivity {
         request.setDescription("Downloading via Nova Browser");
         request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
         request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename);
-        request.setMimeType(mimeType);
-
         DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
-        if (dm != null) {
-            dm.enqueue(request);
-            Toast.makeText(this, "⬇️ Downloading: " + filename, Toast.LENGTH_SHORT).show();
-        }
+        if (dm != null) { dm.enqueue(request); Toast.makeText(this, "⬇️ Downloading: " + filename, Toast.LENGTH_SHORT).show(); }
     }
 
     private void takeScreenshot() {
@@ -587,7 +689,7 @@ public class MainActivity extends AppCompatActivity {
         webView.setDrawingCacheEnabled(false);
         if (bitmap != null) {
             File file = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES),
-                "nova_screenshot_" + System.currentTimeMillis() + ".png");
+                "nova_" + System.currentTimeMillis() + ".png");
             try {
                 java.io.FileOutputStream fos = new java.io.FileOutputStream(file);
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
@@ -601,45 +703,33 @@ public class MainActivity extends AppCompatActivity {
 
     // Animations
     private void animateUrlBarExpand() {
-        ObjectAnimator scaleX = ObjectAnimator.ofFloat(urlEditText, "scaleX", 1f, 1.02f);
-        ObjectAnimator scaleY = ObjectAnimator.ofFloat(urlEditText, "scaleY", 1f, 1.02f);
-        AnimatorSet set = new AnimatorSet();
-        set.playTogether(scaleX, scaleY);
-        set.setDuration(200);
-        set.setInterpolator(new DecelerateInterpolator());
-        set.start();
+        ObjectAnimator sx = ObjectAnimator.ofFloat(urlEditText, "scaleX", 1f, 1.02f);
+        ObjectAnimator sy = ObjectAnimator.ofFloat(urlEditText, "scaleY", 1f, 1.02f);
+        AnimatorSet s = new AnimatorSet(); s.playTogether(sx, sy);
+        s.setDuration(200); s.setInterpolator(new DecelerateInterpolator()); s.start();
     }
 
     private void animateUrlBarCollapse() {
-        ObjectAnimator scaleX = ObjectAnimator.ofFloat(urlEditText, "scaleX", 1.02f, 1f);
-        ObjectAnimator scaleY = ObjectAnimator.ofFloat(urlEditText, "scaleY", 1.02f, 1f);
-        AnimatorSet set = new AnimatorSet();
-        set.playTogether(scaleX, scaleY);
-        set.setDuration(200);
-        set.start();
+        ObjectAnimator sx = ObjectAnimator.ofFloat(urlEditText, "scaleX", 1.02f, 1f);
+        ObjectAnimator sy = ObjectAnimator.ofFloat(urlEditText, "scaleY", 1.02f, 1f);
+        AnimatorSet s = new AnimatorSet(); s.playTogether(sx, sy); s.setDuration(200); s.start();
     }
 
     private void animateTabCount() {
-        ObjectAnimator anim = ObjectAnimator.ofFloat(tabCountText, "scaleX", 1f, 1.4f, 1f);
-        anim.setDuration(300);
-        anim.start();
+        ObjectAnimator.ofFloat(tabCountText, "scaleX", 1f, 1.4f, 1f).setDuration(300);
     }
 
     private void animateItemClick(View v) {
-        ObjectAnimator scaleX = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0.92f, 1f);
-        ObjectAnimator scaleY = ObjectAnimator.ofFloat(v, "scaleY", 1f, 0.92f, 1f);
-        AnimatorSet set = new AnimatorSet();
-        set.playTogether(scaleX, scaleY);
-        set.setDuration(200);
-        set.start();
+        ObjectAnimator sx = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0.92f, 1f);
+        ObjectAnimator sy = ObjectAnimator.ofFloat(v, "scaleY", 1f, 0.92f, 1f);
+        AnimatorSet s = new AnimatorSet(); s.playTogether(sx, sy); s.setDuration(200); s.start();
     }
 
-    // History management
+    // Persistence
     private void addToHistory(String url) {
         if (isIncognito) return;
         String title = webView.getTitle() != null ? webView.getTitle() : url;
-        HistoryItem item = new HistoryItem(title, url, System.currentTimeMillis());
-        historyItems.add(0, item);
+        historyItems.add(0, new HistoryItem(title, url, System.currentTimeMillis()));
         if (historyItems.size() > 100) historyItems.remove(historyItems.size() - 1);
         saveHistory();
     }
@@ -648,11 +738,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             JSONArray arr = new JSONArray();
             for (HistoryItem h : historyItems) {
-                JSONObject obj = new JSONObject();
-                obj.put("title", h.title);
-                obj.put("url", h.url);
-                obj.put("time", h.timestamp);
-                arr.put(obj);
+                JSONObject o = new JSONObject(); o.put("title", h.title); o.put("url", h.url); o.put("time", h.timestamp); arr.put(o);
             }
             prefs.edit().putString("history", arr.toString()).apply();
         } catch (Exception ignored) {}
@@ -660,12 +746,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadHistory() {
         try {
-            String json = prefs.getString("history", "[]");
-            JSONArray arr = new JSONArray(json);
+            JSONArray arr = new JSONArray(prefs.getString("history", "[]"));
             for (int i = 0; i < arr.length(); i++) {
-                JSONObject obj = arr.getJSONObject(i);
-                historyItems.add(new HistoryItem(obj.getString("title"),
-                    obj.getString("url"), obj.getLong("time")));
+                JSONObject o = arr.getJSONObject(i);
+                historyItems.add(new HistoryItem(o.getString("title"), o.getString("url"), o.getLong("time")));
             }
         } catch (Exception ignored) {}
     }
@@ -674,11 +758,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             JSONArray arr = new JSONArray();
             for (BookmarkItem b : bookmarks) {
-                JSONObject obj = new JSONObject();
-                obj.put("title", b.title);
-                obj.put("url", b.url);
-                obj.put("time", b.timestamp);
-                arr.put(obj);
+                JSONObject o = new JSONObject(); o.put("title", b.title); o.put("url", b.url); o.put("time", b.timestamp); arr.put(o);
             }
             prefs.edit().putString("bookmarks", arr.toString()).apply();
         } catch (Exception ignored) {}
@@ -686,17 +766,29 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadBookmarks() {
         try {
-            String json = prefs.getString("bookmarks", "[]");
-            JSONArray arr = new JSONArray(json);
+            JSONArray arr = new JSONArray(prefs.getString("bookmarks", "[]"));
             for (int i = 0; i < arr.length(); i++) {
-                JSONObject obj = arr.getJSONObject(i);
-                bookmarks.add(new BookmarkItem(obj.getString("title"),
-                    obj.getString("url"), obj.getLong("time")));
+                JSONObject o = arr.getJSONObject(i);
+                bookmarks.add(new BookmarkItem(o.getString("title"), o.getString("url"), o.getLong("time")));
             }
         } catch (Exception ignored) {}
     }
 
-    // Keyboard helpers
+    private void saveReadingList() {
+        try {
+            JSONArray arr = new JSONArray();
+            for (String url : readingList) arr.put(url);
+            prefs.edit().putString("reading_list", arr.toString()).apply();
+        } catch (Exception ignored) {}
+    }
+
+    private void loadReadingList() {
+        try {
+            JSONArray arr = new JSONArray(prefs.getString("reading_list", "[]"));
+            for (int i = 0; i < arr.length(); i++) readingList.add(arr.getString(i));
+        } catch (Exception ignored) {}
+    }
+
     private void showKeyboard() {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) imm.showSoftInput(urlEditText, InputMethodManager.SHOW_IMPLICIT);
@@ -709,13 +801,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (findInPageBar.getVisibility() == View.VISIBLE) {
-            closeFindInPage();
-        } else if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            showHomeScreen();
-        }
+        if (findInPageBar.getVisibility() == View.VISIBLE) closeFindInPage();
+        else if (webView.canGoBack()) webView.goBack();
+        else showHomeScreen();
     }
 
     @Override
@@ -724,15 +812,15 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == FILE_CHOOSER_REQUEST && filePathCallback != null) {
             Uri[] results = null;
             if (resultCode == RESULT_OK && data != null) {
-                String dataString = data.getDataString();
-                if (dataString != null) results = new Uri[]{Uri.parse(dataString)};
+                String s = data.getDataString();
+                if (s != null) results = new Uri[]{Uri.parse(s)};
             }
             filePathCallback.onReceiveValue(results);
             filePathCallback = null;
         }
     }
 
-    // ==================== WebViewClient ====================
+    // ===== WebViewClient =====
     private class NovaWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -748,17 +836,11 @@ public class MainActivity extends AppCompatActivity {
             progressBar.setVisibility(View.VISIBLE);
             progressBar.setProgress(0);
             urlEditText.setText(url);
-
-            // Security icon
-            if (url.startsWith("https://")) {
-                securityIcon.setVisibility(View.VISIBLE);
+            securityIcon.setVisibility(View.VISIBLE);
+            if (url.startsWith("https://"))
                 securityIcon.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.secure_icon));
-            } else {
-                securityIcon.setVisibility(View.VISIBLE);
+            else
                 securityIcon.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.insecure_icon));
-            }
-
-            // Update navigation buttons
             btnBack.setAlpha(view.canGoBack() ? 1.0f : 0.4f);
             btnForward.setAlpha(view.canGoForward() ? 1.0f : 0.4f);
         }
@@ -767,47 +849,44 @@ public class MainActivity extends AppCompatActivity {
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
             progressBar.setVisibility(View.GONE);
+            swipeRefresh.setRefreshing(false);
             urlEditText.setText(url);
             addToHistory(url);
             btnBack.setAlpha(view.canGoBack() ? 1.0f : 0.4f);
             btnForward.setAlpha(view.canGoForward() ? 1.0f : 0.4f);
 
-            // Inject dark mode CSS if needed
-            if (isIncognito) {
+            // Apply dark mode JS injection if dark mode on
+            if (isDarkMode) {
                 String darkJs = "javascript:(function(){" +
-                    "var style = document.createElement('style');" +
-                    "style.innerHTML = '* { background-color: #1a1a2e !important; color: #e0e0e0 !important; } " +
-                    "a { color: #9c5fff !important; }';" +
-                    "document.head.appendChild(style);})()";
+                    "if(!document.getElementById('nova-dark')){" +
+                    "var s=document.createElement('style');s.id='nova-dark';" +
+                    "s.innerHTML='html,body,div,section,article,main{background:#1a1a2e!important;color:#e0e0e0!important}a{color:#9c5fff!important}';" +
+                    "document.head.appendChild(s);}})()";
                 view.loadUrl(darkJs);
             }
         }
 
         private boolean isAdUrl(String url) {
-            for (String domain : AD_DOMAINS) {
-                if (url.contains(domain)) return true;
-            }
+            for (String d : AD_DOMAINS) if (url.contains(d)) return true;
             return false;
         }
     }
 
-    // ==================== WebChromeClient ====================
+    // ===== WebChromeClient =====
     private class NovaWebChromeClient extends WebChromeClient {
         @Override
         public void onProgressChanged(WebView view, int newProgress) {
             progressBar.setProgress(newProgress);
-            if (newProgress == 100) progressBar.setVisibility(View.GONE);
-            else progressBar.setVisibility(View.VISIBLE);
+            progressBar.setVisibility(newProgress == 100 ? View.GONE : View.VISIBLE);
+            if (newProgress == 100) swipeRefresh.setRefreshing(false);
         }
 
         @Override
-        public void onReceivedTitle(WebView view, String title) {
-            setTitle(title);
-        }
+        public void onReceivedTitle(WebView view, String title) { setTitle(title); }
 
         @Override
-        public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
-            callback.invoke(origin, true, false);
+        public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback cb) {
+            cb.invoke(origin, true, false);
         }
 
         @Override
@@ -816,9 +895,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback,
-                                          FileChooserParams fileChooserParams) {
-            MainActivity.this.filePathCallback = filePathCallback;
+        public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> fileCb, FileChooserParams params) {
+            filePathCallback = fileCb;
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.setType("*/*");
@@ -827,25 +905,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // ==================== Data Classes ====================
-    static class TabInfo {
-        String title, url;
-        TabInfo(String title, String url) { this.title = title; this.url = url; }
-    }
-
-    static class HistoryItem {
-        String title, url;
-        long timestamp;
-        HistoryItem(String title, String url, long timestamp) {
-            this.title = title; this.url = url; this.timestamp = timestamp;
-        }
-    }
-
-    static class BookmarkItem {
-        String title, url;
-        long timestamp;
-        BookmarkItem(String title, String url, long timestamp) {
-            this.title = title; this.url = url; this.timestamp = timestamp;
-        }
-    }
+    // ===== Data Classes =====
+    static class TabInfo { String title, url; TabInfo(String t, String u) { title=t; url=u; } }
+    static class HistoryItem { String title, url; long timestamp; HistoryItem(String t, String u, long ts) { title=t; url=u; timestamp=ts; } }
+    static class BookmarkItem { String title, url; long timestamp; BookmarkItem(String t, String u, long ts) { title=t; url=u; timestamp=ts; } }
 }

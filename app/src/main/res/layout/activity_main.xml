@@ -93,9 +93,22 @@
                 android:contentDescription="Menu" />
 
         </LinearLayout>
+
+        <!-- URL Autocomplete Suggestions -->
+        <ListView
+            android:id="@+id/urlSuggestions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxHeight="200dp"
+            android:background="@color/surface"
+            android:divider="@color/divider"
+            android:dividerHeight="1dp"
+            android:elevation="8dp"
+            android:visibility="gone" />
+
     </LinearLayout>
 
-    <!-- WebView Container -->
+    <!-- WebView Container with SwipeRefresh -->
     <FrameLayout
         android:id="@+id/webViewContainer"
         android:layout_width="match_parent"
@@ -103,10 +116,17 @@
         android:layout_below="@id/topBar"
         android:layout_above="@id/bottomNav">
 
-        <android.webkit.WebView
-            android:id="@+id/webView"
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefresh"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent">
+
+            <android.webkit.WebView
+                android:id="@+id/webView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
         <!-- Home Screen Overlay -->
         <ScrollView
@@ -124,37 +144,52 @@
                 android:gravity="center_horizontal"
                 android:padding="24dp">
 
+                <!-- Clock Widget -->
+                <TextClock
+                    android:id="@+id/clockWidget"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:format12Hour="hh:mm"
+                    android:format24Hour="HH:mm"
+                    android:textSize="56sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/primary"
+                    android:fontFamily="sans-serif-light" />
+
+                <TextClock
+                    android:id="@+id/dateWidget"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:format12Hour="EEE, MMM d"
+                    android:format24Hour="EEE, MMM d"
+                    android:textSize="16sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginBottom="8dp" />
+
                 <!-- Logo -->
                 <ImageView
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
-                    android:layout_marginTop="40dp"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="16dp"
                     android:src="@drawable/ic_nova_logo"
                     android:contentDescription="Nova" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="8dp"
                     android:text="Nova"
-                    android:textSize="36sp"
+                    android:textSize="28sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/home_subtitle"
-                    android:textSize="14sp"
-                    android:textColor="@color/text_secondary" />
 
                 <!-- Search Bar on Home -->
                 <LinearLayout
                     android:id="@+id/homeSearchBar"
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
-                    android:layout_marginTop="32dp"
+                    android:layout_marginTop="24dp"
                     android:background="@drawable/url_bar_background"
                     android:gravity="center_vertical"
                     android:paddingStart="20dp"
@@ -179,11 +214,65 @@
 
                 </LinearLayout>
 
+                <!-- Search Engine Chips -->
+                <LinearLayout
+                    android:id="@+id/searchEngineChips"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/chipGoogle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/chip_selected"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="Google"
+                        android:textSize="13sp"
+                        android:textColor="#FFFFFF"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <TextView
+                        android:id="@+id/chipBing"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/chip_background"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="Bing"
+                        android:textSize="13sp"
+                        android:textColor="@color/text_secondary"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <TextView
+                        android:id="@+id/chipDDG"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:background="@drawable/chip_background"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="DuckDuckGo"
+                        android:textSize="13sp"
+                        android:textColor="@color/text_secondary"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                </LinearLayout>
+
                 <!-- Quick Links Title -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="32dp"
+                    android:layout_marginTop="28dp"
                     android:text="@string/quick_links"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -200,53 +289,60 @@
                     android:useDefaultMargins="true">
                 </GridLayout>
 
-                <!-- Incognito Hint -->
-                <androidx.cardview.widget.CardView
+                <!-- Dark Mode / Privacy Card -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/surface_variant">
+                    android:layout_marginTop="20dp"
+                    android:orientation="horizontal">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="16dp">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@android:drawable/ic_secure"
-                            android:contentDescription="Incognito" />
-
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/cardDarkMode"
+                        android:layout_width="0dp"
+                        android:layout_height="80dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="@color/surface_variant">
                         <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
                             android:orientation="vertical"
-                            android:layout_marginStart="16dp">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Private Browsing"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/text_primary" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Browse without saving history"
-                                android:textSize="13sp"
-                                android:textColor="@color/text_secondary" />
-
+                            android:gravity="center"
+                            android:padding="12dp">
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="🌙" android:textSize="24sp" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="Dark Mode" android:textSize="12sp"
+                                android:textColor="@color/text_secondary" android:layout_marginTop="4dp"/>
                         </LinearLayout>
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/cardIncognito"
+                        android:layout_width="0dp"
+                        android:layout_height="80dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="@color/surface_variant">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="12dp">
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="🕵️" android:textSize="24sp" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="Incognito" android:textSize="12sp"
+                                android:textColor="@color/text_secondary" android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                </LinearLayout>
 
             </LinearLayout>
         </ScrollView>

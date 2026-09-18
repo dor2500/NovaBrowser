@@ -7,128 +7,76 @@
     android:elevation="16dp"
     android:padding="8dp">
 
-    <TextView
-        android:id="@+id/menuRefresh"
-        style="@style/MenuItemStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="🔄  Refresh"
-        android:textColor="@color/text_primary" />
+    <TextView android:id="@+id/menuRefresh" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="🔄  Refresh" android:textColor="@color/text_primary" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/divider"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"/>
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="@color/divider" android:layout_marginStart="8dp" android:layout_marginEnd="8dp"/>
 
-    <TextView
-        android:id="@+id/menuAddBookmark"
-        style="@style/MenuItemStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="⭐  Add Bookmark"
-        android:textColor="@color/text_primary" />
+    <TextView android:id="@+id/menuAddBookmark" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="⭐  Add Bookmark" android:textColor="@color/text_primary" />
 
-    <TextView
-        android:id="@+id/menuBookmarks"
-        style="@style/MenuItemStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="📌  Bookmarks"
-        android:textColor="@color/text_primary" />
+    <TextView android:id="@+id/menuReadingList" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="📚  Reading List" android:textColor="@color/text_primary" />
 
-    <TextView
-        android:id="@+id/menuHistory"
-        style="@style/MenuItemStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="🕐  History"
-        android:textColor="@color/text_primary" />
+    <TextView android:id="@+id/menuBookmarks" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="📌  Bookmarks" android:textColor="@color/text_primary" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/divider"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"/>
+    <TextView android:id="@+id/menuHistory" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="🕐  History" android:textColor="@color/text_primary" />
 
-    <TextView
-        android:id="@+id/menuIncognito"
-        style="@style/MenuItemStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="🕵️  Incognito Mode"
-        android:textColor="@color/text_primary" />
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="@color/divider" android:layout_marginStart="8dp" android:layout_marginEnd="8dp"/>
 
-    <TextView
-        android:id="@+id/menuDesktop"
-        style="@style/MenuItemStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="💻  Desktop Mode"
-        android:textColor="@color/text_primary" />
+    <TextView android:id="@+id/menuIncognito" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="🕵️  Incognito Mode" android:textColor="@color/text_primary" />
 
-    <TextView
-        android:id="@+id/menuReader"
-        style="@style/MenuItemStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="📖  Reader Mode"
-        android:textColor="@color/text_primary" />
+    <TextView android:id="@+id/menuDesktop" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="💻  Desktop Mode" android:textColor="@color/text_primary" />
 
-    <TextView
-        android:id="@+id/menuAdBlock"
-        style="@style/MenuItemStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="🛡️  Ad Blocker: ON"
-        android:textColor="@color/text_primary" />
+    <TextView android:id="@+id/menuDarkMode" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="🌙  Dark Mode" android:textColor="@color/text_primary" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/divider"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"/>
+    <TextView android:id="@+id/menuReader" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="📖  Reader Mode" android:textColor="@color/text_primary" />
 
-    <TextView
-        android:id="@+id/menuFindInPage"
-        style="@style/MenuItemStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="🔍  Find in Page"
-        android:textColor="@color/text_primary" />
+    <TextView android:id="@+id/menuAdBlock" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="🛡️  Ad Blocker: ON" android:textColor="@color/text_primary" />
 
-    <TextView
-        android:id="@+id/menuScreenshot"
-        style="@style/MenuItemStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="📸  Screenshot"
-        android:textColor="@color/text_primary" />
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="@color/divider" android:layout_marginStart="8dp" android:layout_marginEnd="8dp"/>
 
-    <TextView
-        android:id="@+id/menuShare"
-        style="@style/MenuItemStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="🔗  Share"
-        android:textColor="@color/text_primary" />
+    <TextView android:id="@+id/menuFindInPage" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="🔍  Find in Page" android:textColor="@color/text_primary" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/divider"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"/>
+    <TextView android:id="@+id/menuScreenshot" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="📸  Screenshot" android:textColor="@color/text_primary" />
 
-    <TextView
-        android:id="@+id/menuSettings"
-        style="@style/MenuItemStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="⚙️  Settings"
-        android:textColor="@color/text_primary" />
+    <TextView android:id="@+id/menuPrint" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="🖨️  Print / Save PDF" android:textColor="@color/text_primary" />
+
+    <TextView android:id="@+id/menuShare" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="🔗  Share" android:textColor="@color/text_primary" />
+
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="@color/divider" android:layout_marginStart="8dp" android:layout_marginEnd="8dp"/>
+
+    <TextView android:id="@+id/menuSettings" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="⚙️  Settings" android:textColor="@color/text_primary" />
 
 </LinearLayout>
