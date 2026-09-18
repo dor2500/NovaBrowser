@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Brand Colors - Deep Purple / Electric Blue Gradient -->
+    <color name="primary">#FF6C63FF</color>
+    <color name="primary_variant">#FF5A52E0</color>
+    <color name="primary_dark">#FF3D35C4</color>
+    <color name="secondary">#FF00D9FF</color>
+    <color name="secondary_variant">#FF00B8D4</color>
+    <color name="accent">#FFFF6B9D</color>
+    
+    <!-- Gradient Colors -->
+    <color name="gradient_start">#FF6C63FF</color>
+    <color name="gradient_center">#FF9C5FFF</color>
+    <color name="gradient_end">#FFFF6B9D</color>
+    
+    <!-- Background Colors - Light Theme -->
+    <color name="background">#FFF8F9FE</color>
+    <color name="surface">#FFFFFFFF</color>
+    <color name="surface_variant">#FFF0F1F8</color>
+    <color name="card_background">#FFFFFFFF</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#FF1A1A2E</color>
+    <color name="text_secondary">#FF6B7280</color>
+    <color name="text_hint">#FF9CA3AF</color>
+    <color name="text_on_primary">#FFFFFFFF</color>
+    
+    <!-- URL Bar -->
+    <color name="url_bar_background">#FFF0F1F8</color>
+    <color name="url_bar_text">#FF1A1A2E</color>
+    <color name="url_bar_hint">#FF9CA3AF</color>
+    <color name="url_bar_icon">#FF6C63FF</color>
+    
+    <!-- Status Bar -->
+    <color name="status_bar">#FF5A52E0</color>
+    <color name="nav_bar">#FFFFFFFF</color>
+    
+    <!-- Tab Colors -->
+    <color name="tab_active">#FF6C63FF</color>
+    <color name="tab_inactive">#FFF0F1F8</color>
+    <color name="tab_indicator">#FF6C63FF</color>
+    
+    <!-- Incognito Theme -->
+    <color name="incognito_background">#FF1A1A2E</color>
+    <color name="incognito_surface">#FF252547</color>
+    <color name="incognito_text">#FFE0E0E0</color>
+    <color name="incognito_accent">#FF9C5FFF</color>
+    
+    <!-- Misc -->
+    <color name="progress_bar">#FF6C63FF</color>
+    <color name="secure_icon">#FF10B981</color>
+    <color name="insecure_icon">#FFEF4444</color>
+    <color name="divider">#FFE5E7EB</color>
+    <color name="ripple">#1A6C63FF</color>
+    <color name="overlay">#80000000</color>
+    <color name="shadow">#1A000000</color>
+    
+    <!-- Quick Link Chip Colors -->
+    <color name="chip_google">#FF4285F4</color>
+    <color name="chip_youtube">#FFFF0000</color>
+    <color name="chip_twitter">#FF1DA1F2</color>
+    <color name="chip_reddit">#FFFF5722</color>
+    <color name="chip_github">#FF333333</color>
+    <color name="chip_wikipedia">#FF636466</color>
+</resources>
