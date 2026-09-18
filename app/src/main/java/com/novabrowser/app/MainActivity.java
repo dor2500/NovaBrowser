@@ -454,17 +454,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showMenu() {
+        com.google.android.material.bottomsheet.BottomSheetDialog bottomSheet =
+            new com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.Theme_NovaBrowser);
         View menuView = LayoutInflater.from(this).inflate(R.layout.layout_menu, null);
-        PopupWindow popup = new PopupWindow(menuView,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT, true);
-        popup.setElevation(16);
-        popup.setOutsideTouchable(true);
-        setupMenuItems(menuView, popup);
-        popup.showAtLocation(bottomNav, Gravity.BOTTOM | Gravity.END, 24, 56);
+        bottomSheet.setContentView(menuView);
+        setupMenuItems(menuView, bottomSheet);
+        bottomSheet.show();
     }
 
-    private void setupMenuItems(View menuView, PopupWindow popup) {
+    private void setupMenuItems(View menuView, com.google.android.material.bottomsheet.BottomSheetDialog dialog) {
         TextView menuBookmarks = menuView.findViewById(R.id.menuBookmarks);
         TextView menuHistory = menuView.findViewById(R.id.menuHistory);
         TextView menuIncognito = menuView.findViewById(R.id.menuIncognito);
@@ -481,33 +479,33 @@ public class MainActivity extends AppCompatActivity {
         TextView menuDarkMode = menuView.findViewById(R.id.menuDarkMode);
         TextView menuPrint = menuView.findViewById(R.id.menuPrint);
 
-        if (menuBookmarks != null) menuBookmarks.setOnClickListener(v -> { popup.dismiss(); showBookmarksDialog(); });
-        if (menuHistory != null) menuHistory.setOnClickListener(v -> { popup.dismiss(); showHistoryDialog(); });
+        if (menuBookmarks != null) menuBookmarks.setOnClickListener(v -> { dialog.dismiss(); showBookmarksDialog(); });
+        if (menuHistory != null) menuHistory.setOnClickListener(v -> { dialog.dismiss(); showHistoryDialog(); });
         if (menuIncognito != null) {
             menuIncognito.setText(isIncognito ? "Exit Incognito" : "🕵️  Incognito Mode");
-            menuIncognito.setOnClickListener(v -> { popup.dismiss(); toggleIncognito(); });
+            menuIncognito.setOnClickListener(v -> { dialog.dismiss(); toggleIncognito(); });
         }
         if (menuDesktop != null) {
             menuDesktop.setText(isDesktopMode ? "📱  Mobile Mode" : "💻  Desktop Mode");
-            menuDesktop.setOnClickListener(v -> { popup.dismiss(); toggleDesktopMode(); });
+            menuDesktop.setOnClickListener(v -> { dialog.dismiss(); toggleDesktopMode(); });
         }
         if (menuDarkMode != null) {
             menuDarkMode.setText(isDarkMode ? "☀️  Light Mode" : "🌙  Dark Mode");
-            menuDarkMode.setOnClickListener(v -> { popup.dismiss(); toggleDarkMode(); });
+            menuDarkMode.setOnClickListener(v -> { dialog.dismiss(); toggleDarkMode(); });
         }
-        if (menuFindInPage != null) menuFindInPage.setOnClickListener(v -> { popup.dismiss(); openFindInPage(); });
-        if (menuShare != null) menuShare.setOnClickListener(v -> { popup.dismiss(); shareCurrentPage(); });
-        if (menuAddBookmark != null) menuAddBookmark.setOnClickListener(v -> { popup.dismiss(); addBookmark(); });
-        if (menuReadingList != null) menuReadingList.setOnClickListener(v -> { popup.dismiss(); addToReadingList(); });
-        if (menuSettings != null) menuSettings.setOnClickListener(v -> { popup.dismiss(); openSettings(); });
+        if (menuFindInPage != null) menuFindInPage.setOnClickListener(v -> { dialog.dismiss(); openFindInPage(); });
+        if (menuShare != null) menuShare.setOnClickListener(v -> { dialog.dismiss(); shareCurrentPage(); });
+        if (menuAddBookmark != null) menuAddBookmark.setOnClickListener(v -> { dialog.dismiss(); addBookmark(); });
+        if (menuReadingList != null) menuReadingList.setOnClickListener(v -> { dialog.dismiss(); addToReadingList(); });
+        if (menuSettings != null) menuSettings.setOnClickListener(v -> { dialog.dismiss(); openSettings(); });
         if (menuAdBlock != null) {
             menuAdBlock.setText(adBlockerEnabled ? "🛡️  Ad Blocker: ON" : "Ad Blocker: OFF");
-            menuAdBlock.setOnClickListener(v -> { popup.dismiss(); toggleAdBlocker(); });
+            menuAdBlock.setOnClickListener(v -> { dialog.dismiss(); toggleAdBlocker(); });
         }
-        if (menuReader != null) menuReader.setOnClickListener(v -> { popup.dismiss(); toggleReaderMode(); });
-        if (menuScreenshot != null) menuScreenshot.setOnClickListener(v -> { popup.dismiss(); takeScreenshot(); });
-        if (menuRefresh != null) menuRefresh.setOnClickListener(v -> { popup.dismiss(); webView.reload(); });
-        if (menuPrint != null) menuPrint.setOnClickListener(v -> { popup.dismiss(); printPage(); });
+        if (menuReader != null) menuReader.setOnClickListener(v -> { dialog.dismiss(); toggleReaderMode(); });
+        if (menuScreenshot != null) menuScreenshot.setOnClickListener(v -> { dialog.dismiss(); takeScreenshot(); });
+        if (menuRefresh != null) menuRefresh.setOnClickListener(v -> { dialog.dismiss(); webView.reload(); });
+        if (menuPrint != null) menuPrint.setOnClickListener(v -> { dialog.dismiss(); printPage(); });
     }
 
     private void toggleDarkMode() {
