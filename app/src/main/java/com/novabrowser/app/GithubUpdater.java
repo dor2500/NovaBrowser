@@ -44,7 +44,13 @@ public class GithubUpdater {
 
                 JSONObject release = new JSONObject(response.toString());
                 String latestVersion = release.getString("tag_name");
-                String currentVersion = "v" + BuildConfig.VERSION_NAME; // Assuming tags are like v1.0
+                
+                String currentVersionStr = "1.0";
+                try {
+                    currentVersionStr = activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0).versionName;
+                } catch (Exception e) {}
+                String currentVersion = "v" + currentVersionStr;
+                
                 String body = release.getString("body");
                 
                 String downloadUrl = null;
