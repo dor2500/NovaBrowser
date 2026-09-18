@@ -855,6 +855,19 @@ public class MainActivity extends AppCompatActivity {
             btnBack.setAlpha(view.canGoBack() ? 1.0f : 0.4f);
             btnForward.setAlpha(view.canGoForward() ? 1.0f : 0.4f);
 
+            // Apply Arc-style Dynamic UI Tinting (Chameleon Theme)
+            String tintJs = "javascript:(function(){" +
+                "var col = '';" +
+                "var meta = document.querySelector('meta[name=\"theme-color\"]');" +
+                "if(meta && meta.content) { col = meta.content; }" +
+                "if(!col) {" +
+                "  var bg = window.getComputedStyle(document.body).backgroundColor;" +
+                "  if(bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') { col = bg; }" +
+                "}" +
+                "if(col) { console.log('NOVA_COLOR:' + col); }" +
+                "})()";
+            view.loadUrl(tintJs);
+
             // Apply dark mode JS injection if dark mode on
             if (isDarkMode) {
                 String darkJs = "javascript:(function(){" +
