@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Background Colors - Dark Theme -->
+    <color name="background">#121212</color>
+    <color name="surface">#1E1E1E</color>
+    <color name="surface_variant">#2C2C2C</color>
+    <color name="card_background">#1E1E1E</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#E0E0E0</color>
+    <color name="text_secondary">#AAAAAA</color>
+    <color name="text_hint">#888888</color>
+    <color name="text_on_primary">#FFFFFF</color>
+    
+    <!-- URL Bar -->
+    <color name="url_bar_background">#2C2C2C</color>
+    <color name="url_bar_text">#E0E0E0</color>
+    <color name="url_bar_hint">#888888</color>
+    
+    <!-- Status Bar -->
+    <color name="status_bar">#121212</color>
+    <color name="nav_bar">#121212</color>
+    
+    <!-- Tab Colors -->
+    <color name="tab_inactive">#1E1E1E</color>
+    
+    <!-- Misc -->
+    <color name="divider">#333333</color>
+</resources>
