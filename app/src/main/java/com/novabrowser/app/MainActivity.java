@@ -973,15 +973,6 @@ public class MainActivity extends AppCompatActivity {
                 "})()";
             view.loadUrl(tintJs);
 
-            // Apply dark mode JS injection if dark mode on
-            if (isDarkMode) {
-                String darkJs = "javascript:(function(){" +
-                    "if(!document.getElementById('nova-dark')){" +
-                    "var s=document.createElement('style');s.id='nova-dark';" +
-                    "s.innerHTML='html,body,div,section,article,main{background:#1a1a2e!important;color:#e0e0e0!important}a{color:#9c5fff!important}';" +
-                    "document.head.appendChild(s);}})()";
-                view.loadUrl(darkJs);
-            }
         }
 
         @Override
