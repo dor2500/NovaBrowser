@@ -210,6 +210,7 @@ public class MainActivity extends AppCompatActivity {
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
 
+        webView.addJavascriptInterface(new NovaJsInterface(), "NovaApp");
         webView.setWebViewClient(new NovaWebViewClient());
         webView.setWebChromeClient(new NovaWebChromeClient());
         webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) ->
@@ -931,7 +932,7 @@ public class MainActivity extends AppCompatActivity {
                 "  var bg = window.getComputedStyle(document.body).backgroundColor;" +
                 "  if(bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') { col = bg; }" +
                 "}" +
-                "if(col) { console.log('NOVA_COLOR:' + col); }" +
+                "if(col) { window.NovaApp.setDominantColor(col); }" +
                 "})()";
             view.loadUrl(tintJs);
 
@@ -988,6 +989,23 @@ public class MainActivity extends AppCompatActivity {
             intent.setType("*/*");
             startActivityForResult(Intent.createChooser(intent, "Choose File"), FILE_CHOOSER_REQUEST);
             return true;
+        }
+    }
+
+    // ===== Javascript Interface =====
+    private class NovaJsInterface {
+        @android.webkit.JavascriptInterface
+        public void setDominantColor(String colorString) {
+            runOnUiThread(() -> {
+                try {
+                    int color = android.graphics.Color.parseColor(colorString);
+                    // Dim the color slightly to ensure icons are visible, or just apply it
+                    topBar.setBackgroundColor(color);
+                    bottomNav.setBackgroundColor(color);
+                    getWindow().setStatusBarColor(color);
+                    getWindow().setNavigationBarColor(color);
+                } catch (Exception e) {}
+            });
         }
     }
 

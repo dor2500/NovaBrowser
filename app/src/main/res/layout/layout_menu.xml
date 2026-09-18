@@ -7,6 +7,15 @@
     android:elevation="16dp"
     android:padding="8dp">
 
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="12dp"
+        android:background="#E0E0E0"
+        android:backgroundTint="#808080" />
+
     <TextView android:id="@+id/menuRefresh" style="@style/MenuItemStyle"
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:text="🔄  Refresh" android:textColor="@color/text_primary" />
