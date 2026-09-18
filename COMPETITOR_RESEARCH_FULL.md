@@ -125,4 +125,17 @@ If delivering this document to an engineer or AI developer, instruct them to imp
 4. **Liquid Glass Aesthetic**: A dominant UI trend featuring dynamic translucency, micro-refractions, and depth, making the interface feel like a living material rather than a static layer.
 
 ---
+## 🌐 Update 2: The Spatial Web, Web3 & Hyper-Privacy (2026 Shift)
+
+### עברית: אינטרנט מרחבי, Web3 ופרטיות קיצונית
+1. **Spatial Web & Immersive Browsing**: דפדפנים משלבים WebXR מובנה המאפשר מעבר חלק מגלישה רגילה למציאות מדומה/רבודה (VR/AR). השימוש במחוות (Gestures) וזיהוי פנים/עיניים מחליף לחלוטין סרגלי גלילה באתרי תלת-ממד.
+2. **Native Web3 & Decentralization**: ארנקי קריפטו הפכו לתקן מובנה (כמו ב-Brave ו-Opera). דפדפנים מודרניים תומכים באימות זהות מבוזר (Self-Sovereign Identity) והתחברות לאתרים ללא צורך בסיסמאות מסורתיות.
+3. **AI-Driven On-Device Privacy**: חסימת פרסומות פשוטה כבר לא מספיקה. דפדפנים משתמשים ב-AI מקומי כדי לנטרל מתקפות פישינג, ולזייף נתוני חומרה (Canvas/WebGL Randomization) כדי למנוע Fingerprinting לחלוטין (Zero-Trust Models).
+
+### English: Spatial, Decentralized, and Secure
+1. **The Spatial Web (WebXR)**: Browsers act as portals to AR/VR without requiring dedicated apps. UI paradigms are shifting from 2D taps to spatial gestures and gaze tracking.
+2. **Web3 Infrastructure**: Native, non-custodial multi-chain wallets are now standard. Browsers are facilitating Self-Sovereign Identity and passwordless decentralized logins.
+3. **Hyper-Privacy (On-Device AI Security)**: Moving beyond ad-blocking to complete Fingerprint Resistance via hardware randomization and real-time, on-device ML phishing detection.
+
+---
 *מוכן ליישום עתידי / Ready for future implementation*

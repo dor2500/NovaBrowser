@@ -75,6 +75,14 @@
     <View android:layout_width="match_parent" android:layout_height="1dp"
         android:background="@color/divider" android:layout_marginStart="8dp" android:layout_marginEnd="8dp"/>
 
+    <TextView android:id="@+id/menuTheme" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="🎨  Theme Engine" android:textColor="@color/text_primary" />
+
+    <TextView android:id="@+id/menuUpdate" style="@style/MenuItemStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="🚀  Check for Updates" android:textColor="@color/text_primary" />
+
     <TextView android:id="@+id/menuSettings" style="@style/MenuItemStyle"
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:text="⚙️  Settings" android:textColor="@color/text_primary" />

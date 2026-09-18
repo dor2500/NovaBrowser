@@ -84,10 +84,12 @@ public class MainActivity extends AppCompatActivity {
     private boolean isIncognito = false;
     private boolean isDesktopMode = false;
     private boolean isDarkMode = false;
+    private String currentTheme = "default";
     private boolean adBlockerEnabled = true;
     private int tabCount = 1;
     private String currentSearchEngine = "google"; // google, bing, ddg
     private List<TabInfo> tabs = new ArrayList<>();
+    private GithubUpdater githubUpdater;
 
     // Data
     private SharedPreferences prefs;
@@ -123,19 +125,30 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        prefs = getSharedPreferences("NovaBrowser", Context.MODE_PRIVATE);
+        isDarkMode = prefs.getBoolean("dark_mode", false);
+        currentTheme = prefs.getString("theme_preference", "default");
+        
+        if ("cyberpunk".equals(currentTheme)) {
+            setTheme(R.style.Theme_NovaBrowser_Cyberpunk);
+        } else if ("glass".equals(currentTheme)) {
+            setTheme(R.style.Theme_NovaBrowser_Glass);
+        }
+
         super.onCreate(savedInstanceState);
 
-        prefs = getSharedPreferences("NovaBrowser", Context.MODE_PRIVATE);
         adBlockerEnabled = prefs.getBoolean("ad_blocker", true);
-        isDarkMode = prefs.getBoolean("dark_mode", false);
         currentSearchEngine = prefs.getString("search_engine", "google");
 
         // Apply dark mode
         if (isDarkMode) {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         }
 
         setContentView(R.layout.activity_main);
+        githubUpdater = new GithubUpdater(this);
 
         initViews();
         setupWebView();
@@ -453,6 +466,37 @@ public class MainActivity extends AppCompatActivity {
         urlEditText.setHint(getString(R.string.search_hint));
     }
 
+    private void showErrorState(String failingUrl, String errorMsg) {
+        LinearLayout errorLayout = findViewById(R.id.errorPage);
+        if (errorLayout != null) {
+            TextView txtUrl = findViewById(R.id.errorUrl);
+            TextView txtMsg = findViewById(R.id.errorMessage);
+            View btnRetry = findViewById(R.id.btnErrorRetry);
+            View btnHome = findViewById(R.id.btnErrorHome);
+
+            if (txtUrl != null) txtUrl.setText(failingUrl != null ? failingUrl : "");
+            if (txtMsg != null && errorMsg != null) txtMsg.setText(errorMsg);
+
+            if (btnRetry != null) btnRetry.setOnClickListener(v -> {
+                errorLayout.setVisibility(View.GONE);
+                webView.setVisibility(View.VISIBLE);
+                if (failingUrl != null) webView.loadUrl(failingUrl);
+                else webView.reload();
+            });
+
+            if (btnHome != null) btnHome.setOnClickListener(v -> {
+                errorLayout.setVisibility(View.GONE);
+                showHomeScreen();
+            });
+
+            webView.setVisibility(View.GONE);
+            homeScreen.setVisibility(View.GONE);
+            errorLayout.setVisibility(View.VISIBLE);
+        } else {
+            Toast.makeText(this, "⚠️ Network Error: " + errorMsg, Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void showMenu() {
         com.google.android.material.bottomsheet.BottomSheetDialog bottomSheet =
             new com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.Theme_NovaBrowser);
@@ -478,6 +522,8 @@ public class MainActivity extends AppCompatActivity {
         TextView menuReadingList = menuView.findViewById(R.id.menuReadingList);
         TextView menuDarkMode = menuView.findViewById(R.id.menuDarkMode);
         TextView menuPrint = menuView.findViewById(R.id.menuPrint);
+        TextView menuTheme = menuView.findViewById(R.id.menuTheme);
+        TextView menuUpdate = menuView.findViewById(R.id.menuUpdate);
 
         if (menuBookmarks != null) menuBookmarks.setOnClickListener(v -> { dialog.dismiss(); showBookmarksDialog(); });
         if (menuHistory != null) menuHistory.setOnClickListener(v -> { dialog.dismiss(); showHistoryDialog(); });
@@ -493,6 +539,8 @@ public class MainActivity extends AppCompatActivity {
             menuDarkMode.setText(isDarkMode ? "☀️  Light Mode" : "🌙  Dark Mode");
             menuDarkMode.setOnClickListener(v -> { dialog.dismiss(); toggleDarkMode(); });
         }
+        if (menuTheme != null) menuTheme.setOnClickListener(v -> { dialog.dismiss(); showThemeDialog(); });
+        if (menuUpdate != null) menuUpdate.setOnClickListener(v -> { dialog.dismiss(); githubUpdater.checkForUpdates(true); });
         if (menuFindInPage != null) menuFindInPage.setOnClickListener(v -> { dialog.dismiss(); openFindInPage(); });
         if (menuShare != null) menuShare.setOnClickListener(v -> { dialog.dismiss(); shareCurrentPage(); });
         if (menuAddBookmark != null) menuAddBookmark.setOnClickListener(v -> { dialog.dismiss(); addBookmark(); });
@@ -506,6 +554,27 @@ public class MainActivity extends AppCompatActivity {
         if (menuScreenshot != null) menuScreenshot.setOnClickListener(v -> { dialog.dismiss(); takeScreenshot(); });
         if (menuRefresh != null) menuRefresh.setOnClickListener(v -> { dialog.dismiss(); webView.reload(); });
         if (menuPrint != null) menuPrint.setOnClickListener(v -> { dialog.dismiss(); printPage(); });
+    }
+
+    private void showThemeDialog() {
+        String[] themes = {"Default", "Cyberpunk", "Glass"};
+        int checkedItem = 0;
+        if ("cyberpunk".equals(currentTheme)) checkedItem = 1;
+        else if ("glass".equals(currentTheme)) checkedItem = 2;
+
+        new AlertDialog.Builder(this)
+            .setTitle("🎨 Select Theme")
+            .setSingleChoiceItems(themes, checkedItem, (dialog, which) -> {
+                String selected = "default";
+                if (which == 1) selected = "cyberpunk";
+                else if (which == 2) selected = "glass";
+                
+                prefs.edit().putString("theme_preference", selected).apply();
+                dialog.dismiss();
+                recreate();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
     private void toggleDarkMode() {
@@ -875,6 +944,12 @@ public class MainActivity extends AppCompatActivity {
                     "document.head.appendChild(s);}})()";
                 view.loadUrl(darkJs);
             }
+        }
+
+        @Override
+        public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+            super.onReceivedError(view, errorCode, description, failingUrl);
+            showErrorState(failingUrl, description);
         }
 
         private boolean isAdUrl(String url) {

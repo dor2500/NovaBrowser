@@ -66,4 +66,27 @@
         <item name="cardElevation">4dp</item>
         <item name="cardBackgroundColor">@color/surface</item>
     </style>
+
+    <!-- Cyberpunk Theme -->
+    <style name="Theme.NovaBrowser.Cyberpunk" parent="Theme.NovaBrowser">
+        <item name="colorPrimary">@color/cyberpunk_primary</item>
+        <item name="colorPrimaryVariant">@color/cyberpunk_accent</item>
+        <item name="colorSecondary">@color/cyberpunk_primary</item>
+        <item name="android:windowBackground">@color/cyberpunk_background</item>
+        <item name="android:statusBarColor">@color/cyberpunk_background</item>
+        <item name="android:navigationBarColor">@color/cyberpunk_surface</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <!-- Glass Theme -->
+    <style name="Theme.NovaBrowser.Glass" parent="Theme.NovaBrowser">
+        <item name="colorPrimary">@color/glass_primary</item>
+        <item name="colorSecondary">@color/glass_primary</item>
+        <item name="android:windowBackground">@color/glass_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+    </style>
 </resources>

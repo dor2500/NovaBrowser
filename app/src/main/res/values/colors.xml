@@ -62,4 +62,17 @@
     <color name="chip_reddit">#FFFF5722</color>
     <color name="chip_github">#FF333333</color>
     <color name="chip_wikipedia">#FF636466</color>
+
+    <!-- Cyberpunk Theme Colors -->
+    <color name="cyberpunk_background">#FF0D0221</color>
+    <color name="cyberpunk_surface">#FF1A0538</color>
+    <color name="cyberpunk_primary">#FF00FFCC</color>
+    <color name="cyberpunk_accent">#FFFF003C</color>
+    <color name="cyberpunk_text">#FFE0E0E0</color>
+
+    <!-- Glass Theme Colors -->
+    <color name="glass_background">#E6F0F4F8</color>
+    <color name="glass_surface">#4DFFFFFF</color>
+    <color name="glass_primary">#806C63FF</color>
+    <color name="glass_text">#FF1A1A2E</color>
 </resources>
