@@ -634,13 +634,48 @@ public class MainActivity extends AppCompatActivity {
             "var content = article.innerText;" +
             "var bg = '" + (isDarkMode ? "#1a1a2e" : "#FAFAFA") + "';" +
             "var fg = '" + (isDarkMode ? "#E0E0E0" : "#222222") + "';" +
+            "var btnBg = '" + (isDarkMode ? "#6C63FF" : "#6C63FF") + "';" +
+            "var btnHtml = '<div style=\"text-align:center;margin:20px 0;\"><button onclick=\"window.NovaApp.requestAiSummary(document.querySelector(\\'article\\') ? document.querySelector(\\'article\\').innerText : document.body.innerText)\" style=\"background:'+btnBg+';color:#fff;border:none;padding:12px 24px;border-radius:24px;font-size:16px;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,0.1);font-weight:bold;\">✨ AI Summary</button></div>';" +
             "document.body.innerHTML = '<div style=\"max-width:680px;margin:40px auto;padding:24px;font-family:Georgia,serif;font-size:18px;line-height:1.8;color:'+fg+';background:'+bg+'\">' +" +
             "'<h1 style=\"font-size:28px;margin-bottom:20px;color:'+fg+'\">' + document.title + '</h1>' +" +
+            "btnHtml +" +
             "'<p>' + content.replace(/\\n\\n/g,'</p><p>') + '</p></div>';" +
             "document.body.style.background=bg;" +
             "})()";
         webView.loadUrl(readerJs);
         Toast.makeText(this, "📖 Reader Mode", Toast.LENGTH_SHORT).show();
+    }
+
+    private void showAiSummary(String text) {
+        com.google.android.material.bottomsheet.BottomSheetDialog dialog = new com.google.android.material.bottomsheet.BottomSheetDialog(this);
+        View view = LayoutInflater.from(this).inflate(R.layout.layout_ai_summary, null);
+        dialog.setContentView(view);
+        
+        TextView aiSummaryText = view.findViewById(R.id.aiSummaryText);
+        TextView aiLoadingIndicator = view.findViewById(R.id.aiLoadingIndicator);
+        
+        dialog.show();
+        
+        // Simulate AI Processing delay
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            aiLoadingIndicator.setText("Done");
+            aiSummaryText.setText(generateMockSummary(text));
+        }, 1500);
+    }
+    
+    private String generateMockSummary(String text) {
+        if (text == null || text.length() < 50) return "Not enough content to summarize.";
+        String[] sentences = text.split("\\.");
+        StringBuilder summary = new StringBuilder("Key Takeaways:\n\n");
+        int count = 0;
+        for (String s : sentences) {
+            if (s.trim().length() > 20) {
+                summary.append("• ").append(s.trim()).append(".\n\n");
+                count++;
+            }
+            if (count >= 3) break;
+        }
+        return summary.toString();
     }
 
     private void printPage() {
@@ -1006,6 +1041,11 @@ public class MainActivity extends AppCompatActivity {
                     getWindow().setNavigationBarColor(color);
                 } catch (Exception e) {}
             });
+        }
+
+        @android.webkit.JavascriptInterface
+        public void requestAiSummary(String text) {
+            runOnUiThread(() -> showAiSummary(text));
         }
     }
 
