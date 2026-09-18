@@ -50,6 +50,11 @@
             android:theme="@style/Theme.NovaBrowser"
             android:exported="false" />
 
+        <activity
+            android:name=".BookmarksActivity"
+            android:theme="@style/Theme.NovaBrowser"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
