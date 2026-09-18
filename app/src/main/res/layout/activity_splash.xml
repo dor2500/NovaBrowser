@@ -4,6 +4,21 @@
     android:layout_height="match_parent"
     android:background="@drawable/splash_background">
 
+    <!-- Animated circles decoration -->
+    <View
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_gravity="center"
+        android:background="@drawable/splash_circle_outer"
+        android:alpha="0.15" />
+
+    <View
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_gravity="center"
+        android:background="@drawable/splash_circle_inner"
+        android:alpha="0.2" />
+
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -11,31 +26,64 @@
         android:gravity="center"
         android:orientation="vertical">
 
-        <ImageView
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:src="@drawable/ic_nova_logo"
-            android:contentDescription="Nova Browser Logo" />
+        <!-- Logo with glow effect -->
+        <FrameLayout
+            android:layout_width="120dp"
+            android:layout_height="120dp">
+
+            <View
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:background="@drawable/splash_glow" />
+
+            <ImageView
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_nova_logo"
+                android:contentDescription="Nova Browser Logo"
+                android:id="@+id/splashLogo" />
+        </FrameLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="Nova Browser"
+            android:layout_marginTop="24dp"
+            android:text="Nova"
             android:textColor="#FFFFFF"
-            android:textSize="32sp"
+            android:textSize="42sp"
             android:textStyle="bold"
-            android:fontFamily="sans-serif-light" />
+            android:fontFamily="sans-serif-light"
+            android:letterSpacing="0.1" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:text="Browser"
+            android:textColor="#CCFFFFFF"
+            android:textSize="18sp"
+            android:fontFamily="sans-serif-light"
+            android:letterSpacing="0.3" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
             android:text="Fast. Secure. Beautiful."
-            android:textColor="#B3FFFFFF"
-            android:textSize="16sp"
+            android:textColor="#88FFFFFF"
+            android:textSize="14sp"
             android:fontFamily="sans-serif-light" />
 
     </LinearLayout>
+
+    <!-- Version tag at bottom -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="48dp"
+        android:text="v1.2.0"
+        android:textColor="#66FFFFFF"
+        android:textSize="13sp" />
 
 </FrameLayout>
