@@ -109,17 +109,19 @@
     </LinearLayout>
 
     <!-- WebView Container with SwipeRefresh -->
-    <FrameLayout
+    <LinearLayout
         android:id="@+id/webViewContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:orientation="vertical"
         android:layout_below="@id/topBar"
         android:layout_above="@id/bottomNav">
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipeRefresh"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
             <android.webkit.WebView
                 android:id="@+id/webView"
@@ -127,6 +129,22 @@
                 android:layout_height="match_parent" />
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+        
+        <View
+            android:id="@+id/splitScreenDivider"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:background="@color/primary"
+            android:visibility="gone" />
+
+        <android.webkit.WebView
+            android:id="@+id/webView2"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:visibility="gone" />
+
+    </LinearLayout>
 
         <!-- Home Screen Overlay -->
         <ScrollView
@@ -470,5 +488,7 @@
             android:contentDescription="Menu" />
 
     </LinearLayout>
+
+    <include layout="@layout/layout_tab_manager" />
 
 </RelativeLayout>

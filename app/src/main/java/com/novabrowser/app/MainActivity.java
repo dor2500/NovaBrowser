@@ -72,12 +72,19 @@ public class MainActivity extends AppCompatActivity {
     private ImageView securityIcon;
     private ImageView btnBack, btnForward, btnHome, btnTabs, btnMenu;
     private LinearLayout bottomNav, topBar;
-    private FrameLayout webViewContainer;
+    private LinearLayout webViewContainer;
     private ScrollView homeScreen;
     private LinearLayout findInPageBar;
     private EditText findEditText;
     private TextView findCount, tabCountText;
     private FrameLayout tabCountButton;
+
+    // Split Screen & Tab Manager
+    private View tabManagerContainer;
+    private GridLayout tabsGrid;
+    private View splitScreenDivider;
+    private WebView webView2;
+    private boolean isSplitScreen = false;
     private ImageView menuButton;
     private SwipeRefreshLayout swipeRefresh;
     private ListView urlSuggestions;
@@ -191,6 +198,18 @@ public class MainActivity extends AppCompatActivity {
         menuButton = findViewById(R.id.menuButton);
         swipeRefresh = findViewById(R.id.swipeRefresh);
         urlSuggestions = findViewById(R.id.urlSuggestions);
+
+        // Split Screen & Tab Manager
+        tabManagerContainer = findViewById(R.id.tabManagerContainer);
+        tabsGrid = findViewById(R.id.tabsGrid);
+        splitScreenDivider = findViewById(R.id.splitScreenDivider);
+        webView2 = findViewById(R.id.webView2);
+
+        if (findViewById(R.id.btnCloseTabs) != null) {
+            findViewById(R.id.btnCloseTabs).setOnClickListener(v -> hideTabManager());
+            findViewById(R.id.btnNewTab).setOnClickListener(v -> { hideTabManager(); loadUrl("about:blank"); });
+            findViewById(R.id.btnSplitScreen).setOnClickListener(v -> toggleSplitScreen());
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -217,6 +236,17 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebChromeClient(new NovaWebChromeClient());
         webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) ->
             downloadFile(url, contentDisposition, mimeType));
+            
+        // Configure webView2 for Split Screen
+        WebSettings settings2 = webView2.getSettings();
+        settings2.setJavaScriptEnabled(true);
+        settings2.setDomStorageEnabled(true);
+        settings2.setLoadWithOverviewMode(true);
+        settings2.setUseWideViewPort(true);
+        settings2.setBuiltInZoomControls(true);
+        settings2.setDisplayZoomControls(false);
+        webView2.setWebViewClient(new NovaWebViewClient());
+        webView2.setWebChromeClient(new NovaWebChromeClient());
 
         // SwipeRefresh setup
         swipeRefresh.setColorSchemeResources(R.color.primary, R.color.secondary, R.color.accent);
@@ -267,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
             urlSuggestions.setVisibility(View.GONE);
         });
 
-        tabCountButton.setOnClickListener(v -> showTabsDialog());
+        tabCountButton.setOnClickListener(v -> showTabManager());
         menuButton.setOnClickListener(v -> showMenu());
 
         // Find in page
@@ -316,7 +346,7 @@ public class MainActivity extends AppCompatActivity {
         btnBack.setOnLongClickListener(v -> { showHistoryDialog(); return true; });
         btnForward.setOnClickListener(v -> { if (webView.canGoForward()) webView.goForward(); });
         btnHome.setOnClickListener(v -> showHomeScreen());
-        btnTabs.setOnClickListener(v -> showTabsDialog());
+        btnTabs.setOnClickListener(v -> showTabManager());
         btnMenu.setOnClickListener(v -> showMenu());
     }
 
@@ -1039,6 +1069,82 @@ public class MainActivity extends AppCompatActivity {
         @android.webkit.JavascriptInterface
         public void requestAiSummary(String text) {
             runOnUiThread(() -> showAiSummary(text));
+        }
+    }
+
+    // ===== Tab Manager & Split Screen Logic =====
+    private void showTabManager() {
+        tabManagerContainer.setVisibility(View.VISIBLE);
+        // Fade in animation
+        tabManagerContainer.setAlpha(0f);
+        tabManagerContainer.animate().alpha(1f).setDuration(300).start();
+        
+        // Populate Grid
+        tabsGrid.removeAllViews();
+        addTabCard("Main View", webView.getUrl() != null ? webView.getUrl() : "New Tab");
+        if (isSplitScreen) {
+            addTabCard("Split View", webView2.getUrl() != null ? webView2.getUrl() : "New Tab");
+        }
+    }
+
+    private void hideTabManager() {
+        tabManagerContainer.animate().alpha(0f).setDuration(200).withEndAction(() -> 
+            tabManagerContainer.setVisibility(View.GONE)
+        ).start();
+    }
+
+    private void addTabCard(String title, String subtitle) {
+        CardView card = new CardView(this);
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        params.width = 0;
+        params.height = 300;
+        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        params.setMargins(16, 16, 16, 16);
+        card.setLayoutParams(params);
+        card.setRadius(24f);
+        card.setCardElevation(8f);
+        card.setCardBackgroundColor(android.graphics.Color.parseColor(isDarkMode ? "#252547" : "#FFFFFF"));
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(32, 32, 32, 32);
+        
+        TextView tvTitle = new TextView(this);
+        tvTitle.setText(title);
+        tvTitle.setTextSize(18f);
+        tvTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvTitle.setTextColor(android.graphics.Color.parseColor(isDarkMode ? "#FFFFFF" : "#000000"));
+        
+        TextView tvSub = new TextView(this);
+        tvSub.setText(subtitle);
+        tvSub.setTextSize(12f);
+        tvSub.setTextColor(android.graphics.Color.GRAY);
+        tvSub.setMaxLines(2);
+
+        layout.addView(tvTitle);
+        layout.addView(tvSub);
+        card.addView(layout);
+        
+        card.setOnClickListener(v -> hideTabManager());
+        tabsGrid.addView(card);
+    }
+
+    private void toggleSplitScreen() {
+        hideTabManager();
+        isSplitScreen = !isSplitScreen;
+        if (isSplitScreen) {
+            webView2.setVisibility(View.VISIBLE);
+            splitScreenDivider.setVisibility(View.VISIBLE);
+            if (webView2.getUrl() == null) {
+                webView2.loadUrl("https://google.com");
+            }
+            Toast.makeText(this, "◫ Split View Enabled", Toast.LENGTH_SHORT).show();
+            tabCountText.setText("2");
+        } else {
+            webView2.setVisibility(View.GONE);
+            splitScreenDivider.setVisibility(View.GONE);
+            Toast.makeText(this, "🔲 Split View Disabled", Toast.LENGTH_SHORT).show();
+            tabCountText.setText("1");
         }
     }
 
